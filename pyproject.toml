@@ -1,24 +1,70 @@
 [project]
 name = "pypowerlines"
-version = "0.1.0"
-description = "Add your description here"
+dynamic = ["version"]
+description = "Steady-state transmission network simulator with weather-dependent losses"
 readme = "README.md"
 authors = [
     { name = "MasonicTombomb", email = "136269520+MasonicTombomb@users.noreply.github.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "pytest>=9.2.0",
+    "numpy>=2.1",
+    "scipy>=1.14",
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "pandas>=2.2",
+    "annunciator", # own logging + error library
 ]
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.9"]
+excel = ["openpyxl>=3.1"]
 
 [project.scripts]
-pypowerlines = "pypowerlines:main"
-
-[build-system]
-requires = ["uv_build>=0.13.9,<0.14.0"]
-build-backend = "uv_build"
+pypowerlines = "pypowerlines.cli:main"
 
 [dependency-groups]
-dev = [
-    "pre-commit>=4.7.0",
-]
+dev = ["pytest>=8", "pytest-cov", "hypothesis", "ruff", "mypy",
+"import-linter", "pre-commit", "pandapower", "sphinx", "types-PyYAML"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "NPY", "PL", "RUF", "D"]
+pydocstyle.convention = "numpy"
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --cov=pypowerlines --cov-fail-under=85"
+markers = ["validation: slow reference-case tests", "perf: benchmarks"]
+
+[tool.importlinter]
+root_package = "pypowerlines"
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture (PPL-SDS-001 5.3)"
+type = "layers"
+layers = ["pypowerlines.cli",
+    "pypowerlines.io | pypowerlines.report | pypowerlines.solver",
+    "pypowerlines.physics | pypowerlines.environment",
+    "pypowerlines.library",
+    "pypowerlines.model"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pypowerlines/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pypowerlines"]

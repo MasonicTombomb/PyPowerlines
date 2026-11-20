@@ -175,3 +175,6 @@ cython_debug/
 #.idea/
 
 .idea/
+
+# Hatchling stuff
+src/pypowerlines/_version.py
