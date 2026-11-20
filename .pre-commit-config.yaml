@@ -1,6 +1,10 @@
+# Installs both the pre-commit gates and the commit-msg check with: uv run pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -12,8 +16,36 @@ repos:
         args: [--fix=lf]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.0
+    rev: v0.17.6 # update with: uv run pre-commit autoupdate
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  # Conventional Commits, e.g. "feat(thermal): add IEEE 738 forced convection"
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.5.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy src
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: imports
+        name: import-linter
+        entry: uv run lint-imports
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: fast-tests
+        name: fast tests
+        entry: uv run pytest -q -m "not validation and not perf"
+        language: system
+        pass_filenames: false
+        types: [python]
