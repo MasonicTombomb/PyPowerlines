@@ -32,7 +32,7 @@ jobs:
       - name: Format
         run: uv run ruff format --check .
       - name: Types
-        run: uv run mypy src
+        run: uv run mypy src tests
       - name: Layer contract
         run: uv run lint-imports
       - name: Unit, integration and validation tests (coverage >= 85 %)
