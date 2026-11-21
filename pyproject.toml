@@ -7,17 +7,22 @@ authors = [
     { name = "MasonicTombomb", email = "136269520+MasonicTombomb@users.noreply.github.com" }
 ]
 requires-python = ">=3.14"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = [
-    "numpy>=2.1",
-    "scipy>=1.14",
-    "pydantic>=2.9",
-    "pyyaml>=6.0",
-    "pandas>=2.2",
+    # Lower bounds are the first releases with Python 3.14 wheels.
+    "numpy>=2.3.2",
+    "scipy>=1.16.1",
+    "pydantic>=2.12",
+    "pyyaml>=6.0.3",
+    "pandas>=2.3.3",
     "annunciator", # own logging + error library
 ]
 
 [project.optional-dependencies]
-plots = ["matplotlib>=3.9"]
+plots = ["matplotlib>=3.10.7"]
 excel = ["openpyxl>=3.1"]
 
 [project.scripts]
@@ -33,19 +38,23 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "NPY", "PL", "RUF", "D"]
 pydocstyle.convention = "numpy"
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "PLR2004"]
+
 [tool.mypy]
+python_version = "3.14"
 strict = true
 plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers --cov=pypowerlines --cov-fail-under=85"
+addopts = "-ra --strict-markers --import-mode=importlib --cov=pypowerlines --cov-fail-under=85"
 markers = ["validation: slow reference-case tests", "perf: benchmarks"]
 
 [tool.importlinter]
