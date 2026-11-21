@@ -19,6 +19,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "pandas>=2.3.3",
     "annunciator", # own logging + error library
+    "scipy-stubs~=1.18.1",
 ]
 
 [project.optional-dependencies]
@@ -53,8 +54,8 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-ra --strict-markers --import-mode=importlib --cov=pypowerlines --cov-fail-under=85"
+testpaths = ["tests", "src"]
+addopts = "-ra --strict-markers --doctest-modules --import-mode=importlib --cov=pypowerlines --cov-fail-under=85"
 markers = ["validation: slow reference-case tests", "perf: benchmarks"]
 
 [tool.importlinter]
