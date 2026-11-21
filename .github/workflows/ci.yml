@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+  schedule:
+    - cron: "0 2 * * *" # nightly QR-02 benchmarks (PPL-TVP-001)
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags so hatch-vcs can compute the version
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install ${{ env.PYTHON_VERSION }}
+      - run: uv sync --locked --all-extras --python ${{ env.PYTHON_VERSION }}
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
+      - name: Types
+        run: uv run mypy src tests
+      - name: Layer contract
+        run: uv run lint-imports
+      - name: Unit, integration and validation tests (coverage >= 85 %)
+        run: uv run pytest -m "not perf"
+
+  benchmarks:
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install ${{ env.PYTHON_VERSION }}
+      - run: uv sync --locked --python ${{ env.PYTHON_VERSION }}
+      - name: QR-02 timings
+        run: uv run pytest -m perf --no-cov -v --durations=0
+
+  docs:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install ${{ env.PYTHON_VERSION }}
+      - run: uv sync --locked --python ${{ env.PYTHON_VERSION }}
+      - name: Build Sphinx docs
+        run: uv run sphinx-build -W -b html docs docs/_build/html

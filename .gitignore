@@ -178,3 +178,8 @@ cython_debug/
 
 # Hatchling stuff
 src/pypowerlines/_version.py
+
+# PPL-DEV-001 section 3
+.DS_Store
+results/
+.import_linter_cache/
