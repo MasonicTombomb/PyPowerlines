@@ -18,14 +18,16 @@ EXAMPLE = Path(__file__).resolve().parents[2] / "examples" / "north_wales" / "st
 
 def test_cli_run_writes_results(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     out = tmp_path / "results"
-    exit_code = main([
-        "run",
-        str(EXAMPLE),
-        "--out",
-        str(out),
-        "--scenario",
-        "winter_peak",
-    ])
+    exit_code = main(
+        [
+            "run",
+            str(EXAMPLE),
+            "--out",
+            str(out),
+            "--scenario",
+            "winter_peak",
+        ]
+    )
     assert exit_code == EXIT_OK
     assert (out / "buses.csv").is_file()
     assert (out / "branches.csv").is_file()

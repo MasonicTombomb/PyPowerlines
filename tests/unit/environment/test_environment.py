@@ -35,8 +35,8 @@ def span(zone):
 def test_zone_offset_applied(span, zone):
     scenario = Scenario(id="w", name="w", ambient_c=10.0, wind_ms=2.0)
     ws = resolve_weather(scenario, zone, span)
-    assert ws.ambient_c == pytest.approx(7.0)   # 10 + (-3)
-    assert ws.wind_ms == pytest.approx(3.0)     # 2.0 * 1.5
+    assert ws.ambient_c == pytest.approx(7.0)  # 10 + (-3)
+    assert ws.wind_ms == pytest.approx(3.0)  # 2.0 * 1.5
 
 
 def test_elevation_defaults_to_zone(span, zone):

@@ -78,8 +78,12 @@ def test_slack_angle_is_zero():
     study = _two_bus_study()
     branches = build_branches(study)
     sol = solve_powerflow(
-        study, branches, np.array([0.0, 0.0]), np.array([0.0, 0.0]),
-        ("slack", "pq"), np.array([1.0, 1.0]),
+        study,
+        branches,
+        np.array([0.0, 0.0]),
+        np.array([0.0, 0.0]),
+        ("slack", "pq"),
+        np.array([1.0, 1.0]),
     )
     assert sol.v_ang[0] == 0.0
 

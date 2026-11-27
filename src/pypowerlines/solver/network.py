@@ -181,22 +181,17 @@ def update_line_resistance(
     """
     if branch.kind != "line" or not isinstance(branch.model_ref, Line):
         raise ValueError(
-            f"update_line_resistance called on branch {branch.branch_id!r} "
-            f"of kind {branch.kind!r}",
+            f"update_line_resistance called on branch {branch.branch_id!r} of kind {branch.kind!r}",
         )
     line = branch.model_ref
     temps = (new_temperature_c,) * len(line.spans)
-    z_ohm, _ = lineparams.line_pi_parameters(
-        line.spans, line.circuits, study.frequency_hz, temps
-    )
+    z_ohm, _ = lineparams.line_pi_parameters(line.spans, line.circuits, study.frequency_hz, temps)
     z_base = _z_base_ohm(branch.from_kv, study.base_mva)
     branch.z_series_ohm = z_ohm
     branch.y_series_pu = 1.0 / (z_ohm / z_base)
 
 
-def branch_current_amperes(
-    branch: Branch, i_pu_magnitude: float, base_mva: float
-) -> float:
+def branch_current_amperes(branch: Branch, i_pu_magnitude: float, base_mva: float) -> float:
     """Convert a per-unit current magnitude on the "from" side to amperes.
 
     Parameters

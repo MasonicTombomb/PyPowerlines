@@ -99,6 +99,4 @@ def test_standard_pressure_at_sea_level():
 def test_ampacity_drops_with_higher_ambient(zebra):
     cold = WeatherState(ambient_c=5.0, wind_ms=0.5, irradiance_wm2=1000.0)
     hot = WeatherState(ambient_c=35.0, wind_ms=0.5, irradiance_wm2=1000.0)
-    assert thermal.ampacity(zebra, cold, t_max_c=75.0) > thermal.ampacity(
-        zebra, hot, t_max_c=75.0
-    )
+    assert thermal.ampacity(zebra, cold, t_max_c=75.0) > thermal.ampacity(zebra, hot, t_max_c=75.0)

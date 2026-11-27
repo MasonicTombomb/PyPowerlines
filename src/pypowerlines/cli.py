@@ -246,7 +246,7 @@ def _cmd_library(args: argparse.Namespace) -> int:
     print("Conductors:")
     for name in sorted(lib.conductors):
         c = lib.conductors[name]
-        print(f"  {name:20s} d={c.diameter_m*1000:.2f} mm  R20={c.r20_ohm_per_m*1000:.4f} Ω/km")
+        print(f"  {name:20s} d={c.diameter_m * 1000:.2f} mm  R20={c.r20_ohm_per_m * 1000:.4f} Ω/km")
     print("Towers:")
     for name in sorted(lib.towers):
         print(f"  {name}")

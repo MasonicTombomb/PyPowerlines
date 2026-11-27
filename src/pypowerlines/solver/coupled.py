@@ -195,9 +195,7 @@ def _solve_line_temperature(
             frequency_hz=frequency_hz,
             span_id=f"{line.id}@{zone_id}",
         )
-        i_per_sub = (
-            i_per_circuit / representative.conductor.sub_conductors
-        )
+        i_per_sub = i_per_circuit / representative.conductor.sub_conductors
         terms = thermal.heat_terms(
             representative.conductor,
             t_c,
@@ -288,9 +286,7 @@ def solve_scenario(
             assert isinstance(br.model_ref, Line)
             i_pu = abs(_branch_from_current_pu(br, v_complex))
             i_a = branch_current_amperes(br, i_pu, study.base_mva)
-            t_new, _ = _solve_line_temperature(
-                br.model_ref, i_a, scenario, study.frequency_hz
-            )
+            t_new, _ = _solve_line_temperature(br.model_ref, i_a, scenario, study.frequency_hz)
             t_old = line_temperatures.get(br.model_ref.id, options.t_start_c)
             relaxed = t_old + options.relaxation * (t_new - t_old)
             new_temps[br.model_ref.id] = relaxed
@@ -312,9 +308,7 @@ def solve_scenario(
             raise CouplingNotConverged(passes=pass_count, max_delta_t_k=max_dt)
 
     assert sol is not None
-    return _package_result(
-        study, scenario, branches, sol, pass_count, max_dt, warnings
-    )
+    return _package_result(study, scenario, branches, sol, pass_count, max_dt, warnings)
 
 
 # ---------------------------------------------------------------------------
@@ -388,9 +382,7 @@ def _package_result(  # noqa: PLR0913, PLR0917, PLR0915 -- single aggregation st
         loading_pct = float("nan")
         if br.kind == "line" and isinstance(br.model_ref, Line):
             line = br.model_ref
-            _, details = _solve_line_temperature(
-                line, i_a_total, scenario, study.frequency_hz
-            )
+            _, details = _solve_line_temperature(line, i_a_total, scenario, study.frequency_hz)
             cond_list = []
             amp_a = float("inf")
             for zone_id, (t_c, terms, zone_amp) in details.items():
@@ -419,9 +411,7 @@ def _package_result(  # noqa: PLR0913, PLR0917, PLR0915 -- single aggregation st
                 loading_pct = 100.0 * i_a_per_circuit / amp_a
 
             # Fixed-R comparison: compute |I|^2 R at 20 °C.
-            z20, _ = line_pi_parameters(
-                line.spans, line.circuits, study.frequency_hz, None
-            )
+            z20, _ = line_pi_parameters(line.spans, line.circuits, study.frequency_hz, None)
             r20_ohm = z20.real
             # Three-phase I^2 R loss, line current = i_a_total.
             # The branch currents above are per phase at the from end; a

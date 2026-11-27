@@ -21,19 +21,46 @@ __all__ = ["write_results"]
 
 
 _FIELDNAMES_BUSES: tuple[str, ...] = (
-    "scenario", "bus", "v_pu", "angle_deg", "p_inj_mw", "q_inj_mvar",
+    "scenario",
+    "bus",
+    "v_pu",
+    "angle_deg",
+    "p_inj_mw",
+    "q_inj_mvar",
 )
 _FIELDNAMES_BRANCHES: tuple[str, ...] = (
-    "scenario", "branch", "kind", "from_bus", "to_bus",
-    "p_from_mw", "q_from_mvar", "p_to_mw", "q_to_mvar",
-    "i_a", "loss_mw", "loading_pct",
+    "scenario",
+    "branch",
+    "kind",
+    "from_bus",
+    "to_bus",
+    "p_from_mw",
+    "q_from_mvar",
+    "p_to_mw",
+    "q_to_mvar",
+    "i_a",
+    "loss_mw",
+    "loading_pct",
 )
 _FIELDNAMES_CONDUCTORS: tuple[str, ...] = (
-    "scenario", "line", "zone", "t_c", "ampacity_a",
-    "q_joule_wpm", "q_solar_wpm", "q_conv_wpm", "q_rad_wpm", "overload",
+    "scenario",
+    "line",
+    "zone",
+    "t_c",
+    "ampacity_a",
+    "q_joule_wpm",
+    "q_solar_wpm",
+    "q_conv_wpm",
+    "q_rad_wpm",
+    "overload",
 )
 _FIELDNAMES_TRANSFORMERS: tuple[str, ...] = (
-    "scenario", "transformer", "s_mva", "p0_kw", "pk_kw", "loss_mw",
+    "scenario",
+    "transformer",
+    "s_mva",
+    "p0_kw",
+    "pk_kw",
+    "loss_mw",
 )
 
 
@@ -66,51 +93,59 @@ def write_results(results: Sequence[SnapshotResult], outdir: str | Path) -> None
 
     for r in results:
         for b in r.buses:
-            buses_rows.append({
-                "scenario": r.scenario_id,
-                "bus": b.bus_id,
-                "v_pu": _round(b.v_pu, 6),
-                "angle_deg": _round(b.angle_deg, 4),
-                "p_inj_mw": _round(b.p_inj_mw, 3),
-                "q_inj_mvar": _round(b.q_inj_mvar, 3),
-            })
-        for br in r.branches:
-            branches_rows.append({
-                "scenario": r.scenario_id,
-                "branch": br.branch_id,
-                "kind": br.kind,
-                "from_bus": br.from_bus,
-                "to_bus": br.to_bus,
-                "p_from_mw": _round(br.p_from_mw, 3),
-                "q_from_mvar": _round(br.q_from_mvar, 3),
-                "p_to_mw": _round(br.p_to_mw, 3),
-                "q_to_mvar": _round(br.q_to_mvar, 3),
-                "i_a": _round(br.i_a, 1),
-                "loss_mw": _round(br.loss_mw, 4),
-                "loading_pct": _round(br.loading_pct, 1),
-            })
-            for c in br.conductors:
-                conductors_rows.append({
+            buses_rows.append(
+                {
                     "scenario": r.scenario_id,
-                    "line": c.line_id,
-                    "zone": c.zone_id,
-                    "t_c": _round(c.t_c, 2),
-                    "ampacity_a": _round(c.ampacity_a, 0),
-                    "q_joule_wpm": _round(c.q_joule_wpm, 2),
-                    "q_solar_wpm": _round(c.q_solar_wpm, 2),
-                    "q_conv_wpm": _round(c.q_conv_wpm, 2),
-                    "q_rad_wpm": _round(c.q_rad_wpm, 2),
-                    "overload": c.overload,
-                })
+                    "bus": b.bus_id,
+                    "v_pu": _round(b.v_pu, 6),
+                    "angle_deg": _round(b.angle_deg, 4),
+                    "p_inj_mw": _round(b.p_inj_mw, 3),
+                    "q_inj_mvar": _round(b.q_inj_mvar, 3),
+                }
+            )
+        for br in r.branches:
+            branches_rows.append(
+                {
+                    "scenario": r.scenario_id,
+                    "branch": br.branch_id,
+                    "kind": br.kind,
+                    "from_bus": br.from_bus,
+                    "to_bus": br.to_bus,
+                    "p_from_mw": _round(br.p_from_mw, 3),
+                    "q_from_mvar": _round(br.q_from_mvar, 3),
+                    "p_to_mw": _round(br.p_to_mw, 3),
+                    "q_to_mvar": _round(br.q_to_mvar, 3),
+                    "i_a": _round(br.i_a, 1),
+                    "loss_mw": _round(br.loss_mw, 4),
+                    "loading_pct": _round(br.loading_pct, 1),
+                }
+            )
+            for c in br.conductors:
+                conductors_rows.append(
+                    {
+                        "scenario": r.scenario_id,
+                        "line": c.line_id,
+                        "zone": c.zone_id,
+                        "t_c": _round(c.t_c, 2),
+                        "ampacity_a": _round(c.ampacity_a, 0),
+                        "q_joule_wpm": _round(c.q_joule_wpm, 2),
+                        "q_solar_wpm": _round(c.q_solar_wpm, 2),
+                        "q_conv_wpm": _round(c.q_conv_wpm, 2),
+                        "q_rad_wpm": _round(c.q_rad_wpm, 2),
+                        "overload": c.overload,
+                    }
+                )
         for t in r.transformers:
-            transformers_rows.append({
-                "scenario": r.scenario_id,
-                "transformer": t.transformer_id,
-                "s_mva": _round(t.s_mva, 2),
-                "p0_kw": _round(t.p0_kw, 1),
-                "pk_kw": _round(t.pk_kw, 1),
-                "loss_mw": _round(t.loss_mw, 4),
-            })
+            transformers_rows.append(
+                {
+                    "scenario": r.scenario_id,
+                    "transformer": t.transformer_id,
+                    "s_mva": _round(t.s_mva, 2),
+                    "p0_kw": _round(t.p0_kw, 1),
+                    "pk_kw": _round(t.pk_kw, 1),
+                    "loss_mw": _round(t.loss_mw, 4),
+                }
+            )
 
     _write_csv(out / "buses.csv", _FIELDNAMES_BUSES, buses_rows)
     _write_csv(out / "branches.csv", _FIELDNAMES_BRANCHES, branches_rows)

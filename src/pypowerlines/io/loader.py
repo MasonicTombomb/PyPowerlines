@@ -216,7 +216,7 @@ def _make_bus(d: Mapping[str, Any], path: str, collector: _Collector) -> Bus:
         type_str = "pq"
     try:
         kv = float(d["kv"])
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         collector.error("V-007", f"{path}:{bus_id}.kv", "missing or non-numeric kv")
         kv = 1.0
     if kv <= 0:
@@ -238,7 +238,7 @@ def _opt_float(v: Any) -> float | None:
         return None
     try:
         return float(v)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -246,7 +246,7 @@ def _make_zone(d: Mapping[str, Any], path: str, collector: _Collector) -> Weathe
     zone_id = str(d.get("id", "<unnamed>"))
     try:
         lat = float(d["latitude"])
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         collector.error("V-001", f"{path}:{zone_id}.latitude", "missing or non-numeric latitude")
         lat = 0.0
     return WeatherZone(
@@ -390,17 +390,11 @@ def _load_grid(path: Path, library: Library, collector: _Collector) -> Grid:
     # Zones first (lines reference them).
     zones = {
         z.id: z
-        for z in (
-            _make_zone(z, f"{path}:zones", collector)
-            for z in data.get("zones", []) or []
-        )
+        for z in (_make_zone(z, f"{path}:zones", collector) for z in data.get("zones", []) or [])
     }
     buses = {
         b.id: b
-        for b in (
-            _make_bus(b, f"{path}:buses", collector)
-            for b in data.get("buses", []) or []
-        )
+        for b in (_make_bus(b, f"{path}:buses", collector) for b in data.get("buses", []) or [])
     }
     _check_ids_unique(data.get("buses") or [], "id", "V-002", f"{path}:buses", collector)
     _check_ids_unique(data.get("zones") or [], "id", "V-002", f"{path}:zones", collector)
@@ -590,9 +584,7 @@ def load_study(study_path: str | Path) -> Study:
     scenarios_data = data.get("scenarios", []) or []
     if not scenarios_data:
         collector.error("V-001", f"{path}:scenarios", "at least one scenario is required")
-    scenarios = tuple(
-        _make_scenario(s, f"{path}:scenarios", collector) for s in scenarios_data
-    )
+    scenarios = tuple(_make_scenario(s, f"{path}:scenarios", collector) for s in scenarios_data)
 
     options = _make_options(data.get("options", {}) or {})
 

@@ -58,15 +58,12 @@ def format_summary(study: Study, results: Sequence[SnapshotResult]) -> str:
         print(f"  total losses  {r.total_loss_mw:.2f} MW", file=buf)
         if r.total_loss_fixed_r_mw == r.total_loss_fixed_r_mw:  # not NaN
             delta_pct = (
-                (r.total_loss_mw - r.total_loss_fixed_r_mw)
-                / r.total_loss_fixed_r_mw
-                * 100.0
+                (r.total_loss_mw - r.total_loss_fixed_r_mw) / r.total_loss_fixed_r_mw * 100.0
                 if r.total_loss_fixed_r_mw > 0
                 else 0.0
             )
             print(
-                f"  R at 20 °C    {r.total_loss_fixed_r_mw:.2f} MW"
-                f"  ({delta_pct:+.1f} %)",
+                f"  R at 20 °C    {r.total_loss_fixed_r_mw:.2f} MW  ({delta_pct:+.1f} %)",
                 file=buf,
             )
 

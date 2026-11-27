@@ -33,8 +33,8 @@ def study():
     "scenario_id,expected_loss_mw,tolerance_mw",
     [
         ("winter_peak", 33.8, 10.0),
-        ("summer_day",  26.6, 10.0),
-        ("heatwave",    40.2, 10.0),
+        ("summer_day", 26.6, 10.0),
+        ("heatwave", 40.2, 10.0),
     ],
 )
 def test_total_losses_within_range(study, scenario_id, expected_loss_mw, tolerance_mw):

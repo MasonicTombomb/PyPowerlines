@@ -85,7 +85,7 @@ def air_density(film_c: float, elevation_m: float = 0.0) -> float:
 def air_viscosity(film_c: float) -> float:
     r"""Dynamic viscosity of air at film temperature, Pa·s (CS-11)."""
     tk = film_c + 273.0
-    return 1.458e-6 * tk ** 1.5 / (film_c + 383.4)
+    return 1.458e-6 * tk**1.5 / (film_c + 383.4)
 
 
 def air_conductivity(film_c: float) -> float:
@@ -192,7 +192,7 @@ def _radiative_loss_wpm(conductor: ConductorType, t_s_c: float, weather: Weather
         * conductor.diameter_m
         * STEFAN_BOLTZMAN
         * conductor.emissivity
-        * (t_s_k ** 4 - t_a_k ** 4)
+        * (t_s_k**4 - t_a_k**4)
     )
 
 
@@ -231,12 +231,12 @@ def _convective_loss_wpm(conductor: ConductorType, t_s_c: float, weather: Weathe
 
     # Forced convection (CS-14): two correlations, keep the larger.
     nre = diameter * rho_f * v / mu_f
-    q_c1 = k_angle * (1.01 + 1.35 * nre ** 0.52) * k_f * delta_t
-    q_c2 = k_angle * 0.754 * nre ** 0.6 * k_f * delta_t
+    q_c1 = k_angle * (1.01 + 1.35 * nre**0.52) * k_f * delta_t
+    q_c2 = k_angle * 0.754 * nre**0.6 * k_f * delta_t
     q_forced = max(q_c1, q_c2)
 
     # Natural convection (CS-14).
-    q_natural = 3.645 * rho_f ** 0.5 * diameter ** 0.75 * delta_t ** 1.25
+    q_natural = 3.645 * rho_f**0.5 * diameter**0.75 * delta_t**1.25
 
     return max(q_forced, q_natural)
 

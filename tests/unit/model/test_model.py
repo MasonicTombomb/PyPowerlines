@@ -35,7 +35,7 @@ def test_line_length_sums_spans():
     b = Bus(id="B", name="b", kv=400.0, type="pq")
     spans = (
         Span(length_m=10_000.0, tower=tower, conductor=cond, zone=zone),
-        Span(length_m=5_000.0,  tower=tower, conductor=cond, zone=zone),
+        Span(length_m=5_000.0, tower=tower, conductor=cond, zone=zone),
     )
     line = Line(id="L", from_bus=a, to_bus=b, circuits=1, spans=spans)
     assert line.length_m == 15_000.0
@@ -52,8 +52,12 @@ def test_study_omega():
     a = Bus(id="A", name="a", kv=400.0, type="slack")
     grid = Grid(buses=(a,), lines=(), transformers=(), loads=(), generators=())
     study = Study(
-        id="x", name="x", frequency_hz=50.0, base_mva=100.0,
-        grid=grid, scenarios=(Scenario(id="s", name="s", ambient_c=0.0, wind_ms=0.0),),
+        id="x",
+        name="x",
+        frequency_hz=50.0,
+        base_mva=100.0,
+        grid=grid,
+        scenarios=(Scenario(id="s", name="s", ambient_c=0.0, wind_ms=0.0),),
         options=SolverOptions(),
     )
     assert isclose(study.omega, 2 * pi * 50.0)
