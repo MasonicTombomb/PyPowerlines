@@ -32,10 +32,10 @@ scenarios:
     wind_ms: 3.0
     irradiance_wm2: 200
     generation:
-      WYLF-G: 1600
-      DINO-G: 600
-      FFES-G: 300
-      CONQ-G: 900
+      WYLF-G: 1200
+      DINO-G: 400
+      FFES-G: 200
+      CONQ-G: 650
     load_p_mw: {PENT-L: 450, LEGA-L: 750}
     load_q_mvar: {PENT-L: 110, LEGA-L: 180}
 
@@ -45,10 +45,10 @@ scenarios:
     wind_ms: 0.5
     irradiance_wm2: 1000
     generation:
-      WYLF-G: 1600
-      DINO-G: 300
+      WYLF-G: 1200
+      DINO-G: 200
       FFES-G: 0
-      CONQ-G: 500
+      CONQ-G: 350
     load_p_mw: {PENT-L: 300, LEGA-L: 500}
     load_q_mvar: {PENT-L: 70,  LEGA-L: 110}
 
@@ -58,9 +58,9 @@ scenarios:
     wind_ms: 0.2
     irradiance_wm2: 1000
     generation:
-      WYLF-G: 1600
-      DINO-G: 600
-      FFES-G: 300
-      CONQ-G: 300
+      WYLF-G: 1200
+      DINO-G: 400
+      FFES-G: 200
+      CONQ-G: 250
     load_p_mw: {PENT-L: 380, LEGA-L: 650}
     load_q_mvar: {PENT-L: 95,  LEGA-L: 160}

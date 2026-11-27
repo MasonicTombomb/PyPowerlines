@@ -413,13 +413,12 @@ def _package_result(  # noqa: PLR0913, PLR0917, PLR0915 -- single aggregation st
                 loading_pct = 100.0 * i_a_per_circuit / amp_a
 
             # Fixed-R comparison: compute |I|^2 R at 20 °C.
+            # r20_ohm is the parallel-combined series resistance (line_pi_parameters
+            # already divides by circuits); i_a_total is the total line current across
+            # all circuits, so the three-phase loss is 3 * |I_total|^2 * R_parallel.
             z20, _ = line_pi_parameters(line.spans, line.circuits, study.frequency_hz, None)
             r20_ohm = z20.real
-            # Three-phase I^2 R loss, line current = i_a_total.
-            # The branch currents above are per phase at the from end; a
-            # three-phase line loses 3 I^2 R per side, which matches the
-            # pi-model loss when V_from ≈ V_to.
-            loss20 = 3.0 * i_a_per_circuit * i_a_per_circuit * r20_ohm * circuits
+            loss20 = 3.0 * i_a_total * i_a_total * r20_ohm
             total_loss_fixed_r_mw += loss20 * 1e-6
 
         elif br.kind == "transformer" and isinstance(br.model_ref, Transformer):
