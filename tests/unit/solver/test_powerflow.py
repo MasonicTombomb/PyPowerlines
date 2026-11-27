@@ -14,6 +14,7 @@ from pypowerlines.errors import PowerFlowDivergence
 from pypowerlines.library import builtin_library
 from pypowerlines.model import (
     Bus,
+    BusType,
     Grid,
     Line,
     Load,
@@ -59,12 +60,12 @@ def _two_bus_study(line_length_km: float = 50.0) -> Study:
     )
 
 
-def test_two_bus_converges():
+def test_two_bus_converges() -> None:
     study = _two_bus_study()
     branches = build_branches(study)
     p = np.array([0.0, -1.0])  # 100 MW at the load bus, slack free
     q = np.array([0.0, -0.329])
-    types = ("slack", "pq")
+    types: tuple[BusType, ...] = ("slack", "pq")
     v_set = np.array([1.0, 1.0])
     sol = solve_powerflow(study, branches, p, q, types, v_set)
     assert sol.iterations <= 6
@@ -74,7 +75,7 @@ def test_two_bus_converges():
     assert 0.9 < sol.v_mag[1] < 1.0
 
 
-def test_slack_angle_is_zero():
+def test_slack_angle_is_zero() -> None:
     study = _two_bus_study()
     branches = build_branches(study)
     sol = solve_powerflow(
@@ -88,7 +89,7 @@ def test_slack_angle_is_zero():
     assert sol.v_ang[0] == 0.0
 
 
-def test_powerflow_diverges_on_overload():
+def test_powerflow_diverges_on_overload() -> None:
     """Request an absurd power transfer and expect divergence."""
     study = _two_bus_study(line_length_km=400.0)  # very long = high X
     branches = build_branches(study)

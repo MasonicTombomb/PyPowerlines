@@ -437,7 +437,7 @@ def _load_grid(path: Path, library: Library, collector: _Collector) -> Grid:
 
 
 def _check_ids_unique(
-    items: list[dict], key: str, rule: str, path: str, collector: _Collector
+    items: list[dict[str, object]], key: str, rule: str, path: str, collector: _Collector
 ) -> None:
     seen: set[str] = set()
     for i, d in enumerate(items):

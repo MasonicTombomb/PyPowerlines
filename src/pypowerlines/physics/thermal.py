@@ -72,7 +72,7 @@ def standard_pressure_pa(elevation_m: float) -> float:
         Pressure, Pa.
     """
     h = max(elevation_m, 0.0)
-    return 101_325.0 * (1.0 - 2.25577e-5 * h) ** 5.25588
+    return float(101_325.0 * (1.0 - 2.25577e-5 * h) ** 5.25588)
 
 
 def air_density(film_c: float, elevation_m: float = 0.0) -> float:
@@ -85,7 +85,7 @@ def air_density(film_c: float, elevation_m: float = 0.0) -> float:
 def air_viscosity(film_c: float) -> float:
     r"""Dynamic viscosity of air at film temperature, Pa·s (CS-11)."""
     tk = film_c + 273.0
-    return 1.458e-6 * tk**1.5 / (film_c + 383.4)
+    return float(1.458e-6 * tk**1.5 / (film_c + 383.4))
 
 
 def air_conductivity(film_c: float) -> float:
@@ -238,7 +238,7 @@ def _convective_loss_wpm(conductor: ConductorType, t_s_c: float, weather: Weathe
     # Natural convection (CS-14).
     q_natural = 3.645 * rho_f**0.5 * diameter**0.75 * delta_t**1.25
 
-    return max(q_forced, q_natural)
+    return float(max(q_forced, q_natural))
 
 
 # ---------------------------------------------------------------------------

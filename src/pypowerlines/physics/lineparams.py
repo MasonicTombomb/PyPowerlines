@@ -16,7 +16,7 @@ import math
 from typing import Final
 
 from pypowerlines.constants import EPSILON_0, MU_0
-from pypowerlines.model import ConductorType, TowerType
+from pypowerlines.model import ConductorType, Span, TowerType
 
 __all__ = [
     "bundle_gmr_m",
@@ -138,7 +138,7 @@ def phase_gmd_m(tower: TowerType) -> float:
     d_ab = math.hypot(bx - ax, by - ay)
     d_bc = math.hypot(cx - bx, cy - by)
     d_ca = math.hypot(ax - cx, ay - cy)
-    return (d_ab * d_bc * d_ca) ** (1.0 / 3.0)
+    return float((d_ab * d_bc * d_ca) ** (1.0 / 3.0))
 
 
 def bundle_gmr_m(conductor: ConductorType) -> float:
@@ -172,7 +172,7 @@ def bundle_gmr_m(conductor: ConductorType) -> float:
     if n == _TWIN_BUNDLE:
         return math.sqrt(gmr_c * s)
     bundle_radius = s / (2.0 * math.sin(math.pi / n))
-    return (n * gmr_c * bundle_radius ** (n - 1)) ** (1.0 / n)
+    return float((n * gmr_c * bundle_radius ** (n - 1)) ** (1.0 / n))
 
 
 def bundle_req_m(conductor: ConductorType) -> float:
@@ -198,7 +198,7 @@ def bundle_req_m(conductor: ConductorType) -> float:
     if n == _TWIN_BUNDLE:
         return math.sqrt(radius * s)
     bundle_radius = s / (2.0 * math.sin(math.pi / n))
-    return (n * radius * bundle_radius ** (n - 1)) ** (1.0 / n)
+    return float((n * radius * bundle_radius ** (n - 1)) ** (1.0 / n))
 
 
 # ---------------------------------------------------------------------------
@@ -266,7 +266,7 @@ def shunt_susceptance_per_m(
 
 
 def line_pi_parameters(
-    spans: tuple,
+    spans: tuple[Span, ...],
     circuits: int,
     frequency_hz: float = 50.0,
     span_temperatures_c: tuple[float, ...] | None = None,

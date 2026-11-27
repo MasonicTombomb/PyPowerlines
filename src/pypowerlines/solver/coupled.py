@@ -33,10 +33,12 @@ from pypowerlines.errors import CouplingNotConverged, NumericalError
 from pypowerlines.model import (
     BranchResult,
     BusResult,
+    BusType,
     ConductorResult,
     Line,
     Scenario,
     SnapshotResult,
+    Span,
     Study,
     Transformer,
     TransformerResult,
@@ -67,7 +69,7 @@ _V_PU_HIGH: Final[float] = 1.05
 
 def _build_injections(
     study: Study, scenario: Scenario
-) -> tuple[np.ndarray, np.ndarray, list, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, list[BusType], np.ndarray]:
     """Return ``(p_spec_pu, q_spec_pu, bus_types, v_set_pu)``.
 
     * ``p_spec_pu[i]`` = sum of generator P at bus ``i`` minus sum of
@@ -120,14 +122,14 @@ def _branch_from_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
     """
     vf = v_complex[branch.from_idx] / branch.tap
     vt = v_complex[branch.to_idx]
-    return (vf - vt) * branch.y_series_pu + vf * branch.y_shunt_half_pu
+    return complex((vf - vt) * branch.y_series_pu + vf * branch.y_shunt_half_pu)
 
 
 def _branch_to_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
     r"""Return the current from the "to" bus into the branch, per unit."""
     vf = v_complex[branch.from_idx] / branch.tap
     vt = v_complex[branch.to_idx]
-    return (vt - vf) * branch.y_series_pu + vt * branch.y_shunt_half_pu
+    return complex((vt - vf) * branch.y_series_pu + vt * branch.y_shunt_half_pu)
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +137,7 @@ def _branch_to_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
 # ---------------------------------------------------------------------------
 
 
-def _line_zones(line: Line) -> dict[str, tuple]:
+def _line_zones(line: Line) -> dict[str, tuple[Span, ...]]:
     """Group ``line.spans`` by weather zone id.
 
     Returns
@@ -143,7 +145,7 @@ def _line_zones(line: Line) -> dict[str, tuple]:
     dict[str, tuple[Span, ...]]
         Mapping zone id → the spans in that zone.
     """
-    out: dict[str, list] = {}
+    out: dict[str, list[Span]] = {}
     for span in line.spans:
         out.setdefault(span.zone.id, []).append(span)
     return {k: tuple(v) for k, v in out.items()}
@@ -479,4 +481,4 @@ def _package_result(  # noqa: PLR0913, PLR0917, PLR0915 -- single aggregation st
 def _ybus_times_v(branches: list[Branch], v: np.ndarray, n: int) -> np.ndarray:
     """Compute ``Y @ v`` without rebuilding Y (helper for packaging)."""
     y = build_ybus(n, branches)
-    return y @ v
+    return np.asarray(y @ v)

@@ -10,7 +10,7 @@ from pypowerlines.model import Scenario, Span, WeatherZone
 
 
 @pytest.fixture
-def zone():
+def zone() -> WeatherZone:
     return WeatherZone(
         id="snowdonia",
         name="Snowdonia",
@@ -22,7 +22,7 @@ def zone():
 
 
 @pytest.fixture
-def span(zone):
+def span(zone: WeatherZone) -> Span:
     lib = builtin_library()
     return Span(
         length_m=1000.0,
@@ -32,26 +32,26 @@ def span(zone):
     )
 
 
-def test_zone_offset_applied(span, zone):
+def test_zone_offset_applied(span: Span, zone: WeatherZone) -> None:
     scenario = Scenario(id="w", name="w", ambient_c=10.0, wind_ms=2.0)
     ws = resolve_weather(scenario, zone, span)
     assert ws.ambient_c == pytest.approx(7.0)  # 10 + (-3)
     assert ws.wind_ms == pytest.approx(3.0)  # 2.0 * 1.5
 
 
-def test_elevation_defaults_to_zone(span, zone):
+def test_elevation_defaults_to_zone(span: Span, zone: WeatherZone) -> None:
     scenario = Scenario(id="w", name="w", ambient_c=0.0, wind_ms=0.0)
     ws = resolve_weather(scenario, zone, span)
     assert ws.elevation_m == 300.0
 
 
-def test_wind_cannot_go_negative(span, zone):
+def test_wind_cannot_go_negative(span: Span, zone: WeatherZone) -> None:
     scenario = Scenario(id="w", name="w", ambient_c=0.0, wind_ms=-1.0)
     ws = resolve_weather(scenario, zone, span)
     assert ws.wind_ms == 0.0
 
 
-def test_scenario_irradiance_passes_through(span, zone):
+def test_scenario_irradiance_passes_through(span: Span, zone: WeatherZone) -> None:
     scenario = Scenario(id="w", name="w", ambient_c=0.0, wind_ms=0.0, irradiance_wm2=850.0)
     ws = resolve_weather(scenario, zone, span)
     assert ws.irradiance_wm2 == 850.0

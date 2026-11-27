@@ -21,13 +21,13 @@ from pypowerlines.model import (
 )
 
 
-def test_bus_is_frozen():
+def test_bus_is_frozen() -> None:
     bus = Bus(id="A", name="a", kv=400.0, type="pq")
     with pytest.raises(dataclasses.FrozenInstanceError):
         bus.kv = 275.0  # type: ignore[misc]
 
 
-def test_line_length_sums_spans():
+def test_line_length_sums_spans() -> None:
     tower = TowerType(name="T", phases_m=((-1.0, 0.0), (0.0, 0.0), (1.0, 0.0)))
     cond = ConductorType(name="C", diameter_m=0.02, r20_ohm_per_m=1e-4)
     zone = WeatherZone(id="z", name="z", latitude_deg=53.0)
@@ -41,14 +41,14 @@ def test_line_length_sums_spans():
     assert line.length_m == 15_000.0
 
 
-def test_grid_bus_index():
+def test_grid_bus_index() -> None:
     a = Bus(id="A", name="a", kv=400.0, type="slack")
     b = Bus(id="B", name="b", kv=400.0, type="pq")
     grid = Grid(buses=(a, b), lines=(), transformers=(), loads=(), generators=())
     assert grid.bus_index() == {"A": 0, "B": 1}
 
 
-def test_study_omega():
+def test_study_omega() -> None:
     a = Bus(id="A", name="a", kv=400.0, type="slack")
     grid = Grid(buses=(a,), lines=(), transformers=(), loads=(), generators=())
     study = Study(
@@ -63,7 +63,7 @@ def test_study_omega():
     assert isclose(study.omega, 2 * pi * 50.0)
 
 
-def test_scenario_overrides_default_empty_dicts():
+def test_scenario_overrides_default_empty_dicts() -> None:
     s1 = Scenario(id="a", name="a", ambient_c=0.0, wind_ms=0.0)
     s2 = Scenario(id="b", name="b", ambient_c=0.0, wind_ms=0.0)
     s1.gen_p_mw["X"] = 1.0
