@@ -1,0 +1,116 @@
+# North Wales 400 kV reference network (PPL-REF-001).
+# Illustrative only: substation names are real places but topology, line
+# lengths, generation and loads are invented for testing.
+#
+# Lines are represented as a single span per route (the whole line length)
+# because PyPowerlines v1 tracks one conductor temperature per line
+# (PPL-REF-001 section 7 "Modelling assumptions"). The library's
+# ``ACSR Zebra`` type is already a twin bundle (sub_conductors=2,
+# bundle_spacing_m=0.4) on the ``L6_400kV`` flat-11 m tower.
+
+schema_version: "1.0"
+
+buses:
+  - {id: DEES4, name: "Deeside 400",       kv: 400, type: slack, v_set_pu: 1.00}
+  - {id: CONQ4, name: "Connah's Quay 400", kv: 400, type: pv,    v_set_pu: 1.00}
+  - {id: LEGA4, name: "Legacy 400",        kv: 400, type: pq}
+  - {id: LEGA1, name: "Legacy 132",        kv: 132, type: pq}
+  - {id: TRAW4, name: "Trawsfynydd 400",   kv: 400, type: pq}
+  - {id: FFES4, name: "Ffestiniog 400",    kv: 400, type: pv,    v_set_pu: 1.00}
+  - {id: PENT4, name: "Pentir 400",        kv: 400, type: pq}
+  - {id: PENT1, name: "Pentir 132",        kv: 132, type: pq}
+  - {id: DINO4, name: "Dinorwig 400",      kv: 400, type: pv,    v_set_pu: 1.00}
+  - {id: WYLF4, name: "Wylfa 400",         kv: 400, type: pv,    v_set_pu: 1.01}
+
+zones:
+  - id: anglesey
+    name: "Anglesey coast"
+    latitude: 53.4
+    elevation_m: 20
+    temperature_offset_k: 0.0
+    wind_multiplier: 1.3
+  - id: snowdonia
+    name: "Snowdonia upland"
+    latitude: 53.0
+    elevation_m: 300
+    temperature_offset_k: -3.0
+    wind_multiplier: 1.5
+  - id: nw_coast
+    name: "North Wales coast"
+    latitude: 53.2
+    elevation_m: 30
+    temperature_offset_k: 0.0
+    wind_multiplier: 1.1
+  - id: borders
+    name: "Welsh borders"
+    latitude: 53.0
+    elevation_m: 120
+    temperature_offset_k: 1.0
+    wind_multiplier: 0.8
+
+lines:
+  - id: WYLF-PENT
+    from_bus: WYLF4
+    to_bus: PENT4
+    circuits: 2
+    spans:
+      - {length_m: 30000, tower: L6_400kV, conductor: "ACSR Zebra", zone: anglesey}
+  - id: PENT-DINO
+    from_bus: PENT4
+    to_bus: DINO4
+    circuits: 2
+    spans:
+      - {length_m: 10000, tower: L6_400kV, conductor: "ACSR Zebra", zone: snowdonia}
+  - id: PENT-TRAW
+    from_bus: PENT4
+    to_bus: TRAW4
+    circuits: 2
+    spans:
+      - {length_m: 40000, tower: L6_400kV, conductor: "ACSR Zebra", zone: snowdonia}
+  - id: TRAW-FFES
+    from_bus: TRAW4
+    to_bus: FFES4
+    circuits: 2
+    spans:
+      - {length_m: 6000, tower: L6_400kV, conductor: "ACSR Zebra", zone: snowdonia}
+  - id: PENT-DEES
+    from_bus: PENT4
+    to_bus: DEES4
+    circuits: 2
+    spans:
+      - {length_m: 95000, tower: L6_400kV, conductor: "ACSR Zebra", zone: nw_coast}
+  - id: TRAW-LEGA
+    from_bus: TRAW4
+    to_bus: LEGA4
+    circuits: 2
+    spans:
+      - {length_m: 65000, tower: L6_400kV, conductor: "ACSR Zebra", zone: borders}
+  - id: LEGA-DEES
+    from_bus: LEGA4
+    to_bus: DEES4
+    circuits: 2
+    spans:
+      - {length_m: 25000, tower: L6_400kV, conductor: "ACSR Zebra", zone: borders}
+  - id: DEES-CONQ
+    from_bus: DEES4
+    to_bus: CONQ4
+    circuits: 2
+    spans:
+      - {length_m: 3000, tower: L6_400kV, conductor: "ACSR Zebra", zone: nw_coast}
+
+transformers:
+  - {id: PENT-SGT, hv_bus: PENT4, lv_bus: PENT1, type: SGT_240MVA_400_132, count: 2}
+  - {id: LEGA-SGT, hv_bus: LEGA4, lv_bus: LEGA1, type: SGT_240MVA_400_132, count: 2}
+
+generators:
+  - {id: WYLF-G, bus: WYLF4, p_mw: 1600, v_set_pu: 1.01}
+  - {id: DINO-G, bus: DINO4, p_mw: 600,  v_set_pu: 1.00}
+  - {id: FFES-G, bus: FFES4, p_mw: 300,  v_set_pu: 1.00}
+  - {id: CONQ-G, bus: CONQ4, p_mw: 900,  v_set_pu: 1.00}
+
+# Loads live on the 132 kV side of the transformers (PPL-REF-001 Table 5
+# shows "PENT 450/110" and "LEGA 750/180"). Scenario overrides change the
+# magnitudes without re-declaring the load objects.
+loads:
+  - {id: PENT-L, bus: PENT1, p_mw: 450, q_mvar: 110}
+  - {id: LEGA-L, bus: LEGA1, p_mw: 750, q_mvar: 180}

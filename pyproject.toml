@@ -25,9 +25,11 @@ dependencies = [
 [project.optional-dependencies]
 plots = ["matplotlib>=3.10.7"]
 excel = ["openpyxl>=3.1"]
+gui = ["PyQt6>=6.7"]
 
 [project.scripts]
 pypowerlines = "pypowerlines.cli:main"
+pypowerlines-gui = "pypowerlines.gui:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "pytest-cov", "hypothesis", "ruff", "mypy",
@@ -64,7 +66,7 @@ root_package = "pypowerlines"
 [[tool.importlinter.contracts]]
 name = "Layered architecture (PPL-SDS-001 5.3)"
 type = "layers"
-layers = ["pypowerlines.cli",
+layers = ["pypowerlines.cli | pypowerlines.gui",
     "pypowerlines.io | pypowerlines.report | pypowerlines.solver",
     "pypowerlines.physics | pypowerlines.environment",
     "pypowerlines.library",

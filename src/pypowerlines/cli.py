@@ -48,26 +48,37 @@ the expected ones (PPL-ADR-001: "never bare except"):
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
+from dataclasses import replace
+from pathlib import Path
 from typing import Final
 
 from pypowerlines import __version__
 from pypowerlines._log import configure_logging, get_logger, shutdown_logging
-from pypowerlines.errors import InputError, ModelError, PyPowerlinesError
+from pypowerlines.errors import (
+    InputError,
+    ModelError,
+    NumericalError,
+    PyPowerlinesError,
+)
+from pypowerlines.io import load_study, write_results
+from pypowerlines.library import builtin_library
+from pypowerlines.report import format_summary, log_summary
+from pypowerlines.solver import solve_scenario
 
-__all__ = ["EXIT_INTERRUPTED", "EXIT_OK", "build_parser", "main"]
+__all__ = ["EXIT_INTERRUPTED", "EXIT_OK", "EXIT_PARTIAL", "build_parser", "main"]
 
 log = get_logger(__name__)
 
 EXIT_OK: Final[int] = 0
 """Exit code for a successful run."""
 
+EXIT_PARTIAL: Final[int] = 3
+"""Exit code when at least one scenario failed numerically."""
+
 EXIT_INTERRUPTED: Final[int] = 130
 """Exit code after Ctrl+C (128 + SIGINT, the usual shell convention)."""
-
-# Exit codes 2 and 3 are not repeated here. They live on the exception
-# classes (InputError.exit_code, NumericalError.exit_code), so the mapping
-# cannot drift out of step with pypowerlines.errors.
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,9 +87,6 @@ def build_parser() -> argparse.ArgumentParser:
     Returns
     -------
     argparse.ArgumentParser
-        Parser for the ``pypowerlines`` command. Parsed arguments always
-        contain ``log_level``, one of ``"DEBUG"``, ``"INFO"`` (default) or
-        ``"WARNING"``.
     """
     parser = argparse.ArgumentParser(
         prog="pypowerlines",
@@ -86,7 +94,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
-    # -v and -q contradict each other, so argparse rejects them together.
     verbosity = parser.add_mutually_exclusive_group()
     verbosity.add_argument(
         "-v",
@@ -104,37 +111,54 @@ def build_parser() -> argparse.ArgumentParser:
         const="WARNING",
         help="show only warnings and errors",
     )
-    parser.set_defaults(log_level="INFO")
+    parser.set_defaults(log_level="INFO", command=None)
+
+    sub = parser.add_subparsers(dest="command")
+
+    run = sub.add_parser("run", help="run a study and write results")
+    run.add_argument("study", type=Path, help="path to study.yaml")
+    run.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="directory to write results into (default: results/ next to study.yaml)",
+    )
+    run.add_argument(
+        "--scenario",
+        action="append",
+        default=None,
+        help="solve only this scenario id (repeat for several); "
+        "default: solve every scenario defined in the study",
+    )
+    run.add_argument(
+        "--no-coupling",
+        action="store_true",
+        help="disable the electro-thermal outer loop (R fixed at t_start_c)",
+    )
+    run.add_argument(
+        "--relax",
+        type=float,
+        default=None,
+        help="override the coupling relaxation factor w",
+    )
+
+    validate = sub.add_parser("validate", help="load and validate the study, then exit")
+    validate.add_argument("study", type=Path, help="path to study.yaml")
+
+    lib = sub.add_parser("library", help="inspect the built-in equipment library")
+    lib.add_argument(
+        "action",
+        choices=["list"],
+        nargs="?",
+        default="list",
+        help="what to do",
+    )
+
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the ``pypowerlines`` command.
-
-    Parses the arguments, configures logging for the duration of the
-    command, runs it, and turns the outcome into an exit code. Logging is
-    always shut down on the way out, so log files are flushed and closed
-    even when an exception escapes.
-
-    Parameters
-    ----------
-    argv : Sequence[str] or None
-        Arguments to parse; ``None`` reads them from ``sys.argv``.
-
-    Returns
-    -------
-    int
-        Process exit code. See the module docstring for the meaning of
-        each value.
-
-    Raises
-    ------
-    SystemExit
-        From :mod:`argparse` for ``--help``, ``--version`` (code 0) and
-        usage errors (code 2). These happen before logging is configured.
-    ModelError
-        Re-raised after logging: it is a bug and must not be hidden.
-    """
+    """Run the ``pypowerlines`` command and return its exit code."""
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -145,46 +169,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         log.debug("PyPowerlines finished.", exit_code=exit_code)
         return exit_code
     finally:
-        # In ``finally`` so the log is flushed even when _run re-raises.
         shutdown_logging()
 
 
 def _run(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
-    """Run the selected command and map exceptions to exit codes.
-
-    Parameters
-    ----------
-    parser : argparse.ArgumentParser
-        The parser, used to print help when no command is given.
-    args : argparse.Namespace
-        The parsed arguments.
-
-    Returns
-    -------
-    int
-        Process exit code.
-    """
+    """Execute the selected command and map exceptions to exit codes."""
     try:
         return _dispatch(parser, args)
 
     except InputError as err:
-        # Log every finding at its own severity so each one is a separate,
-        # filterable record. Then log the summary with cause and remedy.
         for problem in err.problems:
             log.log(problem.severity, str(problem), rule=problem.rule, path=problem.path)
         log.error(err.message, code=err.code, **err.fields)
         return err.exit_code
 
     except ModelError as err:
-        # A bug: record the traceback in the log file, then let it propagate
-        # so Python also prints it and the process exits non-zero.
         log.exception(err.message, code=err.code, **err.context)
         raise
 
     except PyPowerlinesError as err:
-        # Includes NumericalError (exit 3) if one escapes the solver's own
-        # per-case handling. The traceback goes to DEBUG only: the coded
-        # message, cause and remedy are what the user needs.
         log.error(err.message, code=err.code, **err.fields)
         log.debug("Traceback of the error above.", exc_info=err)
         return err.exit_code
@@ -194,31 +197,108 @@ def _run(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
         return EXIT_INTERRUPTED
 
     except Exception:
-        # Anything else is an unanticipated bug. Log it with the traceback,
-        # then re-raise: never turn an unknown failure into a quiet exit code.
         log.exception("Unexpected internal error. This is a bug in PyPowerlines.")
         raise
 
 
 def _dispatch(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
-    """Run the command selected on the command line.
-
-    The ``run``, ``validate`` and ``library`` commands (PPL-UG-001
-    section 4) will be dispatched from here. Until they exist, the help
-    text is printed.
-
-    Parameters
-    ----------
-    parser : argparse.ArgumentParser
-        The parser, used to print help.
-    args : argparse.Namespace
-        The parsed arguments.
-
-    Returns
-    -------
-    int
-        Process exit code.
-    """
-    log.debug("No command given; printing help.")
+    """Dispatch to the selected subcommand."""
+    if args.command is None:
+        parser.print_help()
+        return EXIT_OK
+    if args.command == "run":
+        return _cmd_run(args)
+    if args.command == "validate":
+        return _cmd_validate(args)
+    if args.command == "library":
+        return _cmd_library(args)
     parser.print_help()
     return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
+# Subcommand implementations
+# ---------------------------------------------------------------------------
+
+
+def _cmd_validate(args: argparse.Namespace) -> int:
+    study = load_study(args.study)
+    log.info(
+        "Study loaded.",
+        id=study.id,
+        buses=len(study.grid.buses),
+        lines=len(study.grid.lines),
+        transformers=len(study.grid.transformers),
+        scenarios=len(study.scenarios),
+    )
+    print(
+        f"{study.id}: {len(study.grid.buses)} buses, "
+        f"{len(study.grid.lines)} lines, "
+        f"{len(study.grid.transformers)} transformers, "
+        f"{len(study.scenarios)} scenarios -- OK",
+    )
+    return EXIT_OK
+
+
+def _cmd_library(args: argparse.Namespace) -> int:
+    del args  # unused in v1; reserved for future `library show NAME` dispatch
+    lib = builtin_library()
+    print("Conductors:")
+    for name in sorted(lib.conductors):
+        c = lib.conductors[name]
+        print(f"  {name:20s} d={c.diameter_m * 1000:.2f} mm  R20={c.r20_ohm_per_m * 1000:.4f} Ω/km")
+    print("Towers:")
+    for name in sorted(lib.towers):
+        print(f"  {name}")
+    print("Transformers:")
+    for name in sorted(lib.transformers):
+        t = lib.transformers[name]
+        print(f"  {name:25s} {t.rating_mva} MVA {t.hv_kv}/{t.lv_kv} kV  z={t.z_pct}%")
+    return EXIT_OK
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    study = load_study(args.study)
+
+    # Apply CLI overrides to solver options.
+    options = study.options
+    if args.no_coupling:
+        options = replace(options, coupling=False)
+    if args.relax is not None:
+        options = replace(options, relaxation=args.relax)
+    study = replace(study, options=options)
+
+    scenarios = study.scenarios
+    if args.scenario:
+        wanted = set(args.scenario)
+        scenarios = tuple(s for s in scenarios if s.id in wanted)
+        missing = wanted - {s.id for s in scenarios}
+        if missing:
+            log.warning("Unknown scenario ids skipped.", ids=sorted(missing))
+    if not scenarios:
+        log.error("No scenarios to solve.", requested=args.scenario)
+        return EXIT_OK
+
+    results = []
+    failed = 0
+    for scenario in scenarios:
+        log.info("Solving scenario.", id=scenario.id, name=scenario.name)
+        try:
+            results.append(solve_scenario(study, scenario))
+        except NumericalError as err:
+            log.error(
+                "Scenario failed numerically; continuing with the next one.",
+                scenario_id=scenario.id,
+                code=err.code,
+                **err.fields,
+            )
+            failed += 1
+
+    outdir = args.out or (args.study.parent / "results")
+    if results:
+        write_results(results, outdir)
+        log.info("Results written.", outdir=str(outdir), scenarios=len(results))
+        log_summary(study, results)
+        sys.stdout.write(format_summary(study, results))
+
+    return EXIT_PARTIAL if failed else EXIT_OK

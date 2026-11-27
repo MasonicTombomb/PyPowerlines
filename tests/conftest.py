@@ -1,5 +1,11 @@
 """Shared pytest fixtures for the PyPowerlines test suite."""
 
+import os
+
+# Default to the offscreen Qt platform so headless CI can import the GUI
+# module. Set before any PyQt6 import happens.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 from collections.abc import Iterator
 
 import pytest
