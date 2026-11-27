@@ -26,6 +26,7 @@ from pypowerlines.errors import InputError, NumericalError
 from pypowerlines.io import load_study
 from pypowerlines.solver import solve_scenario
 
+from .diagram import NetworkDiagramWidget
 from .models import (
     branch_model,
     bus_model,
@@ -62,7 +63,10 @@ class MainWindow(QMainWindow):
         self._conductors = conductor_model()
         self._transformers = transformer_model()
 
+        self._diagram = NetworkDiagramWidget()
+
         self._tabs = QTabWidget()
+        self._tabs.addTab(self._diagram, "Diagram")
         self._tabs.addTab(_table_view(self._buses), "Buses")
         self._tabs.addTab(_table_view(self._branches), "Branches")
         self._tabs.addTab(_table_view(self._conductors), "Conductors")
@@ -148,6 +152,7 @@ class MainWindow(QMainWindow):
             transformers=self._transformers,
             result=result,
         )
+        self._diagram.set_result(result)
         self._loss_label.setText(
             f"Coupled total loss: {result.total_loss_mw:.2f} MW"
             f"   |   Fixed-R baseline: {result.total_loss_fixed_r_mw:.2f} MW"
@@ -168,6 +173,7 @@ class MainWindow(QMainWindow):
             return
         self._study = study
         self.setWindowTitle(f"PyPowerlines — {study.id}")
+        self._diagram.set_study(study)
         self._scenario_combo.clear()
         for s in study.scenarios:
             self._scenario_combo.addItem(f"{s.id} — {s.name}", s.id)
