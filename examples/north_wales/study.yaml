@@ -1,0 +1,66 @@
+# North Wales reference study: three weather snapshots solved with the
+# coupled electro-thermal loop (PPL-REF-001 section 4).
+#
+# Run it with:
+#   uv run pypowerlines run examples/north_wales/study.yaml --out examples/north_wales/results
+#
+# Compare the console totals to PPL-REF-001 section 5: ~33.8 MW (winter),
+# ~26.6 MW (summer), ~40.2 MW (heatwave). Small differences are expected
+# per PPL-REF-001 section 7 (convergence tolerances, conductor temperature
+# grouping and the skin-effect approximation).
+
+schema_version: "1.0"
+id: NW-REF
+name: "North Wales reference network"
+frequency_hz: 50
+base_mva: 100
+
+grid: grid.yaml
+
+options:
+  coupling: true
+  thermal_tolerance_k: 0.1
+  relaxation: 1.0
+  thermal_model: ieee738_2012
+  t_start_c: 20.0
+  t_max_c: 75.0
+
+scenarios:
+  - id: winter_peak
+    name: "Winter peak"
+    ambient_c: 2.0
+    wind_ms: 3.0
+    irradiance_wm2: 200
+    generation:
+      WYLF-G: 1600
+      DINO-G: 600
+      FFES-G: 300
+      CONQ-G: 900
+    load_p_mw: {PENT-L: 450, LEGA-L: 750}
+    load_q_mvar: {PENT-L: 110, LEGA-L: 180}
+
+  - id: summer_day
+    name: "Summer day"
+    ambient_c: 25.0
+    wind_ms: 0.5
+    irradiance_wm2: 1000
+    generation:
+      WYLF-G: 1600
+      DINO-G: 300
+      FFES-G: 0
+      CONQ-G: 500
+    load_p_mw: {PENT-L: 300, LEGA-L: 500}
+    load_q_mvar: {PENT-L: 70,  LEGA-L: 110}
+
+  - id: heatwave
+    name: "Heatwave, still air"
+    ambient_c: 33.0
+    wind_ms: 0.2
+    irradiance_wm2: 1000
+    generation:
+      WYLF-G: 1600
+      DINO-G: 600
+      FFES-G: 300
+      CONQ-G: 300
+    load_p_mw: {PENT-L: 380, LEGA-L: 650}
+    load_q_mvar: {PENT-L: 95,  LEGA-L: 160}
