@@ -108,6 +108,12 @@ _T_MAX_SEARCH_C: Final[float] = 500.0
 _BRENT_TOL_K: Final[float] = 1e-2
 """Tolerance for the root finder, K (tighter than the outer coupling loop)."""
 
+_MIN_BRACKET_LOW_C: Final[float] = -50.0
+"""Lower bound of the initial Brent bracket, °C (far enough below any ambient)."""
+
+_BRACKET_STEP_K: Final[float] = 5.0
+"""How far the low end is lowered on each iteration when forcing a sign change."""
+
 
 @dataclass(frozen=True, slots=True)
 class HeatTerms:
@@ -150,8 +156,10 @@ class HeatTerms:
 
 
 def _solar_gain_wpm(conductor: ConductorType, weather: WeatherState) -> float:
-    r"""Solar heat gain per metre, W/m. Assumes the given irradiance already
-    includes the geometry factor (effective incidence). CS-12.
+    r"""Compute the solar heat gain per metre, W/m (CS-12).
+
+    The irradiance passed in already includes the geometry factor
+    (effective incidence) so the formula reduces to :math:`q_s = \alpha E D`.
     """
     return conductor.absorptivity * weather.irradiance_wm2 * conductor.diameter_m
 
@@ -273,7 +281,7 @@ def heat_terms(
     return HeatTerms(q_joule=q_joule, q_solar=q_solar, q_conv=q_conv, q_rad=q_rad)
 
 
-def conductor_temperature(
+def conductor_temperature(  # noqa: PLR0913 -- one argument per IEEE 738 input
     conductor: ConductorType,
     current_a: float,
     weather: WeatherState,
@@ -327,8 +335,8 @@ def conductor_temperature(
     # The ambient value can itself give a positive residual (solar gain
     # exceeds convective/radiative loss at zero delta-T): nudge the low
     # end down a little to force a sign change for very small currents.
-    while residual(lo) > 0.0 and lo > -50.0:
-        lo -= 5.0
+    while residual(lo) > 0.0 and lo > _MIN_BRACKET_LOW_C:
+        lo -= _BRACKET_STEP_K
     hi = _T_MAX_SEARCH_C
     f_lo = residual(lo)
     f_hi = residual(hi)
@@ -357,7 +365,7 @@ def ampacity(
     circuits: int = 1,
     frequency_hz: float = 50.0,
 ) -> float:
-    r"""Current at which the conductor just reaches its maximum temperature.
+    r"""Return the current at which the conductor just reaches :math:`T_{max}`.
 
     Closed form from PPL-CH-001 CS-15 at :math:`T_s = T_{max}`:
 

@@ -72,16 +72,18 @@ class Branch:
 
 
 def _z_base_ohm(kv: float, base_mva: float) -> float:
-    """Base impedance for a voltage level, Ω (CS-02)."""
+    """Return the base impedance for a voltage level, Ω (CS-02)."""
     return (kv * 1e3) ** 2 / (base_mva * 1e6)
 
 
 def _i_base_a(kv: float, base_mva: float) -> float:
-    """Base current for a voltage level, A (CS-02)."""
+    """Return the base current for a voltage level, A (CS-02)."""
     return base_mva * 1e6 / (math.sqrt(3.0) * kv * 1e3)
 
 
-def build_branches(study: Study, span_temperatures_c: dict[str, float] | None = None) -> list[Branch]:
+def build_branches(
+    study: Study, span_temperatures_c: dict[str, float] | None = None
+) -> list[Branch]:
     """Build the flat branch list from the study.
 
     Called once per outer-loop pass: the branch list is rebuilt with

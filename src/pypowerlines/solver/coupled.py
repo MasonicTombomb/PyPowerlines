@@ -23,6 +23,7 @@ The flow (PPL-ALG-001 section 1, PPL-SDS-001 section 5.6):
 from __future__ import annotations
 
 import math
+from typing import Final
 
 import numpy as np
 
@@ -41,14 +42,22 @@ from pypowerlines.model import (
     TransformerResult,
 )
 from pypowerlines.physics import thermal
+from pypowerlines.physics.lineparams import line_pi_parameters
 
 from .network import Branch, branch_current_amperes, build_branches, update_line_resistance
-from .powerflow import PowerFlowSolution, solve_powerflow
+from .powerflow import PowerFlowSolution, build_ybus, solve_powerflow
 
 __all__ = ["solve_scenario"]
 
 
 _log = get_logger(__name__)
+
+
+_V_PU_LOW: Final[float] = 0.95
+"""Lower edge of the ±5 % acceptable voltage band (PPL-SDS-001)."""
+
+_V_PU_HIGH: Final[float] = 1.05
+"""Upper edge of the ±5 % acceptable voltage band."""
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +108,7 @@ def _build_injections(
 
 
 def _branch_from_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
-    r"""Current flowing from the "from" bus into the branch, per unit.
+    r"""Return the current from the "from" bus into the branch, per unit.
 
     From the admittance representation with HV-side tap :math:`t`:
 
@@ -115,7 +124,7 @@ def _branch_from_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
 
 
 def _branch_to_current_pu(branch: Branch, v_complex: np.ndarray) -> complex:
-    r"""Current flowing from the "to" bus into the branch, per unit."""
+    r"""Return the current from the "to" bus into the branch, per unit."""
     vf = v_complex[branch.from_idx] / branch.tap
     vt = v_complex[branch.to_idx]
     return (vt - vf) * branch.y_series_pu + vt * branch.y_shunt_half_pu
@@ -233,7 +242,6 @@ def solve_scenario(
     SnapshotResult
     """
     options = study.options
-    grid = study.grid
     p_pu, q_pu, bus_types, v_set_pu = _build_injections(study, scenario)
 
     # Starting temperatures: use a single global value per PPL-ALG-001
@@ -305,7 +313,7 @@ def solve_scenario(
 
     assert sol is not None
     return _package_result(
-        study, scenario, branches, sol, line_temperatures, pass_count, max_dt, warnings
+        study, scenario, branches, sol, pass_count, max_dt, warnings
     )
 
 
@@ -314,19 +322,17 @@ def solve_scenario(
 # ---------------------------------------------------------------------------
 
 
-def _package_result(
+def _package_result(  # noqa: PLR0913, PLR0917, PLR0915 -- single aggregation step
     study: Study,
     scenario: Scenario,
     branches: list[Branch],
     sol: PowerFlowSolution,
-    line_temperatures: dict[str, float],
     pass_count: int,
     max_dt_k: float,
     warnings: list[str],
 ) -> SnapshotResult:
     """Build a :class:`SnapshotResult` from the converged power flow."""
     grid = study.grid
-    bus_idx = grid.bus_index()
     base_mva = study.base_mva
     v = sol.v_complex
 
@@ -345,7 +351,7 @@ def _package_result(
             )
         )
         v_pu = abs(v[i])
-        if v_pu < 0.95 or v_pu > 1.05:
+        if v_pu < _V_PU_LOW or v_pu > _V_PU_HIGH:
             warnings.append(f"bus {bus.id} voltage {v_pu:.3f} pu outside ±5% band")
 
     # Branch results
@@ -413,8 +419,6 @@ def _package_result(
                 loading_pct = 100.0 * i_a_per_circuit / amp_a
 
             # Fixed-R comparison: compute |I|^2 R at 20 °C.
-            from pypowerlines.physics.lineparams import line_pi_parameters
-
             z20, _ = line_pi_parameters(
                 line.spans, line.circuits, study.frequency_hz, None
             )
@@ -484,7 +488,5 @@ def _package_result(
 
 def _ybus_times_v(branches: list[Branch], v: np.ndarray, n: int) -> np.ndarray:
     """Compute ``Y @ v`` without rebuilding Y (helper for packaging)."""
-    from .powerflow import build_ybus
-
     y = build_ybus(n, branches)
     return y @ v

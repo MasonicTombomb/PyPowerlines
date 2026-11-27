@@ -11,6 +11,7 @@ without re-loading the grid (PPL-REF-001 section 4).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Final
 
@@ -154,7 +155,5 @@ class Study:
 
     @property
     def omega(self) -> float:
-        """Angular frequency :math:`\\omega = 2\\pi f`, in rad/s."""
-        from math import pi
-
-        return 2.0 * pi * self.frequency_hz
+        r"""Angular frequency :math:`\omega = 2\pi f`, in rad/s."""
+        return 2.0 * math.pi * self.frequency_hz

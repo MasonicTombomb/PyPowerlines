@@ -10,10 +10,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from pypowerlines.errors import PowerFlowDivergence
 from pypowerlines.library import builtin_library
 from pypowerlines.model import (
     Bus,
-    Generator,
     Grid,
     Line,
     Load,
@@ -86,8 +86,6 @@ def test_slack_angle_is_zero():
 
 def test_powerflow_diverges_on_overload():
     """Request an absurd power transfer and expect divergence."""
-    from pypowerlines.errors import PowerFlowDivergence
-
     study = _two_bus_study(line_length_km=400.0)  # very long = high X
     branches = build_branches(study)
     # 10 GW load through a single long circuit = past stability limit.

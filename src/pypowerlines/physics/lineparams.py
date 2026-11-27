@@ -1,4 +1,4 @@
-"""Overhead line parameters: resistance, reactance and susceptance.
+r"""Overhead line parameters: resistance, reactance and susceptance.
 
 All formulae are PPL-CH-001 CS-05 to CS-09. The functions are pure and
 return per-metre values in SI; callers add the ``* length_m`` and divide
@@ -6,13 +6,14 @@ by circuits where needed.
 
 A line may cross more than one weather zone. Each span owns its own
 conductor temperature, so the line resistance is
-:math:`\\sum_s R_{ac}(T_s)\\,\\ell_s`. Reactance and susceptance depend on
+:math:`\sum_s R_{ac}(T_s)\,\ell_s`. Reactance and susceptance depend on
 geometry only, so they are summed by length regardless of temperature.
 """
 
 from __future__ import annotations
 
 import math
+from typing import Final
 
 from pypowerlines.constants import EPSILON_0, MU_0
 from pypowerlines.model import ConductorType, TowerType
@@ -27,6 +28,12 @@ __all__ = [
     "series_reactance_per_m",
     "shunt_susceptance_per_m",
 ]
+
+_PHASES_PER_CIRCUIT: Final[int] = 3
+"""Number of phases per three-phase circuit (positive-sequence model)."""
+
+_TWIN_BUNDLE: Final[int] = 2
+"""Sub-conductor count for a twin bundle (special-cased for its closed form)."""
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +130,7 @@ def phase_gmd_m(tower: TowerType) -> float:
         If the tower has fewer than three phase positions.
     """
     phases = tower.phases_m
-    if len(phases) < 3:
+    if len(phases) < _PHASES_PER_CIRCUIT:
         raise ValueError(
             f"tower {tower.name!r} needs at least three phase positions to compute GMD",
         )
@@ -162,7 +169,7 @@ def bundle_gmr_m(conductor: ConductorType) -> float:
     if n <= 1:
         return gmr_c
     s = conductor.bundle_spacing_m
-    if n == 2:
+    if n == _TWIN_BUNDLE:
         return math.sqrt(gmr_c * s)
     bundle_radius = s / (2.0 * math.sin(math.pi / n))
     return (n * gmr_c * bundle_radius ** (n - 1)) ** (1.0 / n)
@@ -188,7 +195,7 @@ def bundle_req_m(conductor: ConductorType) -> float:
     if n <= 1:
         return radius
     s = conductor.bundle_spacing_m
-    if n == 2:
+    if n == _TWIN_BUNDLE:
         return math.sqrt(radius * s)
     bundle_radius = s / (2.0 * math.sin(math.pi / n))
     return (n * radius * bundle_radius ** (n - 1)) ** (1.0 / n)

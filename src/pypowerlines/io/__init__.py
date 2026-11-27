@@ -1,4 +1,4 @@
-"""Study loading and result writing.
+r"""Study loading and result writing.
 
 Two public entry points:
 
@@ -10,7 +10,7 @@ Two public entry points:
   before anything numerical runs.
 
 * :func:`write_results` writes a directory of CSV / JSON files from a
-  list of :class:`~pypowerlines.solver.SnapshotResult`\\s. See
+  list of :class:`~pypowerlines.solver.SnapshotResult`\s. See
   :mod:`pypowerlines.report` for the row-level details.
 """
 

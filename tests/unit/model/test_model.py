@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import dataclasses
+from math import isclose, pi
 
 import pytest
 
 from pypowerlines.model import (
     Bus,
     ConductorType,
-    Generator,
     Grid,
     Line,
-    Load,
     Scenario,
     SolverOptions,
     Span,
@@ -50,8 +49,6 @@ def test_grid_bus_index():
 
 
 def test_study_omega():
-    from math import isclose, pi
-
     a = Bus(id="A", name="a", kv=400.0, type="slack")
     grid = Grid(buses=(a,), lines=(), transformers=(), loads=(), generators=())
     study = Study(

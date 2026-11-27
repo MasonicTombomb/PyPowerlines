@@ -9,7 +9,6 @@ import pytest
 from pypowerlines.errors import InputError
 from pypowerlines.io import load_study
 
-
 EXAMPLE = Path(__file__).resolve().parents[3] / "examples" / "north_wales" / "study.yaml"
 
 

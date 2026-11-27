@@ -21,7 +21,6 @@ import pytest
 from pypowerlines.io import load_study
 from pypowerlines.solver import solve_scenario
 
-
 EXAMPLE = Path(__file__).resolve().parents[2] / "examples" / "north_wales" / "study.yaml"
 
 

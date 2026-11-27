@@ -11,13 +11,16 @@ Worked example from PPL-CH-001 CS-11-15 (Zebra at 75 °C, 25 °C ambient,
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from pypowerlines.library import builtin_library
 from pypowerlines.model import WeatherState
 from pypowerlines.physics import thermal
+from pypowerlines.physics.thermal import (
+    _convective_loss_wpm,
+    _radiative_loss_wpm,
+    _solar_gain_wpm,
+)
 
 
 @pytest.fixture
@@ -39,22 +42,16 @@ def cs15_weather():
 
 
 def test_solar_gain_matches_cs12(zebra, cs15_weather):
-    from pypowerlines.physics.thermal import _solar_gain_wpm
-
     q_s = _solar_gain_wpm(zebra, cs15_weather)
     assert q_s == pytest.approx(22.9, rel=2e-2)
 
 
 def test_radiative_loss_matches_cs13(zebra, cs15_weather):
-    from pypowerlines.physics.thermal import _radiative_loss_wpm
-
     q_r = _radiative_loss_wpm(zebra, 75.0, cs15_weather)
     assert q_r == pytest.approx(24.2, rel=3e-2)
 
 
 def test_convective_loss_matches_cs14(zebra, cs15_weather):
-    from pypowerlines.physics.thermal import _convective_loss_wpm
-
     q_c = _convective_loss_wpm(zebra, 75.0, cs15_weather)
     assert q_c == pytest.approx(62.5, rel=3e-2)
 
@@ -78,7 +75,7 @@ def test_heat_balance_residual_is_zero_at_solution(zebra, cs15_weather):
 
 
 def test_air_density_sea_level_50c():
-    # CS-11 worked example: ρ_f = 1.0925 kg/m³ at sea level, 50 °C.
+    # CS-11 worked example: 1.0925 kg/m^3 at sea level, 50 C.
     assert thermal.air_density(50.0, 0.0) == pytest.approx(1.0925, rel=1e-3)
 
 

@@ -112,20 +112,20 @@ class PowerFlowSolution:
 
     @property
     def v_complex(self) -> np.ndarray:
-        """Complex voltage vector :math:`V\\,e^{j\\theta}`."""
+        r"""Complex voltage vector :math:`V\,e^{j\theta}`."""
         return self.v_mag * np.exp(1j * self.v_ang)
 
 
 def _power_injections(v: np.ndarray, y_bus: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Compute :math:`P_i` and :math:`Q_i` from the complex voltages.
+    r"""Compute :math:`P_i` and :math:`Q_i` from the complex voltages.
 
-    :math:`S_i = V_i (\\sum_k Y_{ik} V_k)^*`.
+    :math:`S_i = V_i (\sum_k Y_{ik} V_k)^*`.
     """
     s = v * np.conj(y_bus @ v)
     return s.real, s.imag
 
 
-def _build_jacobian(
+def _build_jacobian(  # noqa: PLR0913, PLR0917 -- derivatives need every operating-point input
     v_mag: np.ndarray,
     v_ang: np.ndarray,
     y_bus: np.ndarray,
@@ -170,7 +170,7 @@ def _build_jacobian(
     return np.block([[j11, j12], [j21, j22]])
 
 
-def solve_powerflow(
+def solve_powerflow(  # noqa: PLR0913, PLR0917 -- one argument per NR input vector
     study: Study,
     branches: list[Branch],
     p_spec_pu: np.ndarray,
@@ -190,7 +190,7 @@ def solve_powerflow(
         Branches in their current state (with temperature-updated R if
         called from the coupling loop).
     p_spec_pu, q_spec_pu : numpy.ndarray
-        Specified net injections (generation − load) in per unit, one
+        Specified net injections (generation - load) in per unit, one
         entry per bus. ``q_spec_pu`` is ignored at PV and slack buses.
     bus_types : tuple[BusType, ...]
         Role of each bus. Exactly one ``"slack"``.

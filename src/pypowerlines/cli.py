@@ -50,6 +50,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Final
 
@@ -61,6 +62,10 @@ from pypowerlines.errors import (
     NumericalError,
     PyPowerlinesError,
 )
+from pypowerlines.io import load_study, write_results
+from pypowerlines.library import builtin_library
+from pypowerlines.report import format_summary, log_summary
+from pypowerlines.solver import solve_scenario
 
 __all__ = ["EXIT_INTERRUPTED", "EXIT_OK", "EXIT_PARTIAL", "build_parser", "main"]
 
@@ -217,8 +222,6 @@ def _dispatch(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
-    from pypowerlines.io import load_study
-
     study = load_study(args.study)
     log.info(
         "Study loaded.",
@@ -237,9 +240,8 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _cmd_library(args: argparse.Namespace) -> int:  # noqa: ARG001 - args unused for v1
-    from pypowerlines.library import builtin_library
-
+def _cmd_library(args: argparse.Namespace) -> int:
+    del args  # unused in v1; reserved for future `library show NAME` dispatch
     lib = builtin_library()
     print("Conductors:")
     for name in sorted(lib.conductors):
@@ -256,12 +258,6 @@ def _cmd_library(args: argparse.Namespace) -> int:  # noqa: ARG001 - args unused
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
-    from dataclasses import replace
-
-    from pypowerlines.io import load_study, write_results
-    from pypowerlines.report import format_summary, log_summary
-    from pypowerlines.solver import solve_scenario
-
     study = load_study(args.study)
 
     # Apply CLI overrides to solver options.

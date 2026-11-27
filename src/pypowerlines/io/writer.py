@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -141,11 +142,7 @@ def _round(v: float, nd: int) -> float | None:
     if v is None:
         return None
     try:
-        import math
-
-        if math.isnan(v):
-            return None
-        if math.isinf(v):
+        if math.isnan(v) or math.isinf(v):
             return None
     except TypeError:
         return None
@@ -153,9 +150,6 @@ def _round(v: float, nd: int) -> float | None:
 
 
 def _json_fallback(obj: Any) -> Any:
-    if isinstance(obj, float):
-        import math
-
-        if math.isnan(obj) or math.isinf(obj):
-            return None
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
     return str(obj)

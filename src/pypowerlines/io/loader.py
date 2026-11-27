@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import yaml
 
@@ -26,7 +26,6 @@ from pypowerlines.errors import InputError, Problem
 from pypowerlines.library import Library, builtin_library
 from pypowerlines.model import (
     Bus,
-    BusType,
     ConductorType,
     Generator,
     Grid,
@@ -43,6 +42,20 @@ from pypowerlines.model import (
 )
 
 __all__ = ["load_study"]
+
+
+# ---------------------------------------------------------------------------
+# Validation thresholds
+# ---------------------------------------------------------------------------
+
+_KV_EQUALITY_TOL: Final[float] = 1e-6
+"""Tolerance for comparing nominal line-end voltages (V-005)."""
+
+_KV_MISMATCH_FRACTION: Final[float] = 0.1
+"""Maximum fractional kV mismatch between a transformer type and its bus (V-006)."""
+
+_MIN_RELIABLE_WIND_MS: Final[float] = 0.5
+"""Winds below this are flagged by V-010 as rating-uncertain (PPL-CH-001 CS-14)."""
 
 
 # ---------------------------------------------------------------------------
@@ -71,9 +84,8 @@ def _read_yaml(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
     if not isinstance(data, dict):
-        raise InputError(
-            [Problem("V-001", str(path), f"top level must be a mapping, got {type(data).__name__}", "error")]
-        )
+        msg = f"top level must be a mapping, got {type(data).__name__}"
+        raise InputError([Problem("V-001", str(path), msg, "error")])
     return data
 
 
@@ -130,7 +142,9 @@ def _load_library(extra_paths: Iterable[Path], collector: _Collector) -> Library
             t["name"]: _make_transformer_type(t, f"{p}:transformers", collector)
             for t in data.get("transformers", []) or []
         }
-        lib = lib.merged_with(Library(conductors=conductors, towers=towers, transformers=transformers))
+        lib = lib.merged_with(
+            Library(conductors=conductors, towers=towers, transformers=transformers)
+        )
     return lib
 
 
@@ -166,7 +180,9 @@ def _make_tower(d: Mapping[str, Any], path: str, collector: _Collector) -> Tower
         return TowerType(name=str(name), phases_m=((0.0, 0.0),) * 3)
 
 
-def _make_transformer_type(d: Mapping[str, Any], path: str, collector: _Collector) -> TransformerType:
+def _make_transformer_type(
+    d: Mapping[str, Any], path: str, collector: _Collector
+) -> TransformerType:
     name = d.get("name", "<unnamed>")
     try:
         return TransformerType(
@@ -243,7 +259,7 @@ def _make_zone(d: Mapping[str, Any], path: str, collector: _Collector) -> Weathe
     )
 
 
-def _make_line(
+def _make_line(  # noqa: PLR0913, PLR0917 -- one validator per entity field
     d: Mapping[str, Any],
     path: str,
     buses: dict[str, Bus],
@@ -258,7 +274,7 @@ def _make_line(
     except KeyError as err:
         collector.error("V-003", f"{path}:{line_id}", f"bus reference not found: {err}")
         return None
-    if abs(from_bus.kv - to_bus.kv) > 1e-6:
+    if abs(from_bus.kv - to_bus.kv) > _KV_EQUALITY_TOL:
         collector.error(
             "V-005",
             f"{path}:{line_id}",
@@ -316,13 +332,13 @@ def _make_transformer(
     except KeyError as err:
         collector.error("V-003", f"{path}:{tid}", f"unresolved reference: {err}")
         return None
-    if abs(hv_bus.kv - type_obj.hv_kv) / type_obj.hv_kv > 0.1:
+    if abs(hv_bus.kv - type_obj.hv_kv) / type_obj.hv_kv > _KV_MISMATCH_FRACTION:
         collector.error(
             "V-006",
             f"{path}:{tid}",
             f"HV bus {hv_bus.kv} kV mismatches type {type_obj.hv_kv} kV by >10%",
         )
-    if abs(lv_bus.kv - type_obj.lv_kv) / type_obj.lv_kv > 0.1:
+    if abs(lv_bus.kv - type_obj.lv_kv) / type_obj.lv_kv > _KV_MISMATCH_FRACTION:
         collector.error(
             "V-006",
             f"{path}:{tid}",
@@ -338,7 +354,9 @@ def _make_transformer(
     )
 
 
-def _make_load(d: Mapping[str, Any], path: str, buses: dict[str, Bus], collector: _Collector) -> Load | None:
+def _make_load(
+    d: Mapping[str, Any], path: str, buses: dict[str, Bus], collector: _Collector
+) -> Load | None:
     lid = str(d.get("id", "<unnamed>"))
     try:
         bus = buses[d["bus"]]
@@ -370,8 +388,20 @@ def _make_generator(
 def _load_grid(path: Path, library: Library, collector: _Collector) -> Grid:
     data = _read_yaml(path)
     # Zones first (lines reference them).
-    zones = {z.id: z for z in (_make_zone(z, f"{path}:zones", collector) for z in data.get("zones", []) or [])}
-    buses = {b.id: b for b in (_make_bus(b, f"{path}:buses", collector) for b in data.get("buses", []) or [])}
+    zones = {
+        z.id: z
+        for z in (
+            _make_zone(z, f"{path}:zones", collector)
+            for z in data.get("zones", []) or []
+        )
+    }
+    buses = {
+        b.id: b
+        for b in (
+            _make_bus(b, f"{path}:buses", collector)
+            for b in data.get("buses", []) or []
+        )
+    }
     _check_ids_unique(data.get("buses") or [], "id", "V-002", f"{path}:buses", collector)
     _check_ids_unique(data.get("zones") or [], "id", "V-002", f"{path}:zones", collector)
 
@@ -412,7 +442,9 @@ def _load_grid(path: Path, library: Library, collector: _Collector) -> Grid:
     return grid
 
 
-def _check_ids_unique(items: list[dict], key: str, rule: str, path: str, collector: _Collector) -> None:
+def _check_ids_unique(  # noqa: PLR0913, PLR0917 -- orchestrates one validation rule
+    items: list[dict], key: str, rule: str, path: str, collector: _Collector
+) -> None:
     seen: set[str] = set()
     for i, d in enumerate(items):
         v = str(d.get(key, ""))
@@ -482,7 +514,7 @@ def _make_scenario(d: Mapping[str, Any], path: str, collector: _Collector) -> Sc
         collector.error("V-001", f"{path}:{sid}", f"missing/invalid ambient_c or wind_ms: {err}")
         ambient = 20.0
         wind = 1.0
-    if wind < 0.5:
+    if wind < _MIN_RELIABLE_WIND_MS:
         collector.warning(
             "V-010",
             f"{path}:{sid}.wind_ms",

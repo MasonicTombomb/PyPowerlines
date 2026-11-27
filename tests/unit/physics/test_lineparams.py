@@ -16,6 +16,7 @@ import math
 import pytest
 
 from pypowerlines.library import builtin_library
+from pypowerlines.model import ConductorType
 from pypowerlines.physics import lineparams
 
 
@@ -81,8 +82,6 @@ def test_phase_gmd_cs08(l6_tower):
 
 
 def test_single_conductor_fallback():
-    from pypowerlines.model import ConductorType
-
     single = ConductorType(name="X", diameter_m=0.02, r20_ohm_per_m=1e-4, sub_conductors=1)
     gmr = lineparams.bundle_gmr_m(single)
     assert gmr == pytest.approx(0.7788 * 0.01)
